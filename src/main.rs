@@ -39,5 +39,5 @@ fn str_to_move(s: &str) -> Option<(u8, u8)> {
 }
 
 fn matrix_init(n: i32) -> Vec<Vec<i32>> {
-    let
+    let mut matrix: Vec<Vec<i32>> = Vec::new();
 }
