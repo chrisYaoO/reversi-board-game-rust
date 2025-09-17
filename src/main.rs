@@ -23,13 +23,56 @@ fn main() {
             .expect("Failed to read line");
         let trimmed: &str = input.trim();
         let _move = str_to_move(&board, &trimmed, player);
-        if let Some((first, second)) = _move {
-            println!("move: {first},{second}");
+        if let Some((row, col)) = _move {
+            println!("move: {row},{col}");
+            move_flip(&mut board, row, col, player);
             board_show(&board, B_SIZE as usize);
             player = 1 - player;
         } else {
             println!("Invalid move. Try again.");
             board_show(&board, B_SIZE as usize);
+        }
+    }
+}
+
+//move and flip the stone
+fn move_flip(board: &mut Vec<Vec<char>>, row: i8, col: i8, player: u8) {
+    board[row as usize][col as usize] = player_to_color(player);
+    let directions = [
+        (-1, -1),
+        (-1, 0),
+        (-1, 1),
+        (0, -1),
+        (0, 1),
+        (1, -1),
+        (1, 0),
+        (1, 1),
+    ];
+    for (dx, dy) in directions {
+        let mut curr_row = row + dx;
+        let mut curr_col = col + dy;
+        let mut flip_list: Vec<(i8, i8)> = Vec::new();
+        let oppo_color: char = player_to_color(1 - player);
+        let player_color: char = player_to_color(player);
+
+        while on_board(curr_row, curr_col) {
+            let curr_color: char = board[curr_row as usize][curr_col as usize];
+            if curr_color == oppo_color {
+                flip_list.push((curr_row, curr_col));
+            } else if curr_color == player_color {
+                //meet the end
+                if !flip_list.is_empty() {
+                    for (i, j) in flip_list {
+                        board[i as usize][j as usize] = player_color;
+                    }
+                }
+                break;
+            } else {
+                // dot
+                break;
+            }
+            curr_row += dx;
+            curr_col += dy;
         }
     }
 }
@@ -60,47 +103,38 @@ fn valid_move(board: &Vec<Vec<char>>, row: i8, col: i8, player: u8) -> bool {
     let oppo_color: char = player_to_color(1 - player);
     let player_color: char = player_to_color(player);
 
-    let mut flag: bool = false;
-    'outer: for i in (row - 1)..=(row + 1) {
-        for j in (col - 1)..=(col + 1) {
-            if on_board(i, j) && board[i as usize][j as usize] == oppo_color {
-                flag = true;
-                break 'outer;
+    let directions = [
+        (-1, -1),
+        (-1, 0),
+        (-1, 1),
+        (0, -1),
+        (0, 1),
+        (1, -1),
+        (1, 0),
+        (1, 1),
+    ];
+    for (dx, dy) in directions {
+        let mut curr_row: i8 = row + dx;
+        let mut curr_col: i8 = col + dy;
+        let mut flag_oppo: bool = false;
+        while on_board(curr_row, curr_col) {
+            let curr_color: char = board[curr_row as usize][curr_col as usize];
+            if curr_color == oppo_color {
+                //rule1
+                flag_oppo = true;
+            } else if curr_color == player_color {
+                //rule2
+                if flag_oppo {
+                    return true;
+                } else {
+                    break;
+                }
+            } else {
+                // dot
+                break;
             }
-        }
-    }
-    if flag == false {
-        return false;
-    }
-
-    for i in 0..B_SIZE {
-        if board[i as usize][col as usize] == player_color && i != row {
-            return true;
-        }
-        if board[row as usize][i as usize] == player_color && i != col {
-            return true;
-        }
-    }
-    for i in 1..B_SIZE {
-        if on_board(row + i, col + i) {
-            if board[(row + i) as usize][(col + i) as usize] == player_color {
-                return true;
-            }
-        }
-        if on_board(row + i, col - i) {
-            if board[(row + i) as usize][(col - i) as usize] == player_color {
-                return true;
-            }
-        }
-        if on_board(row - i, col - i) {
-            if board[(row - i) as usize][(col - i) as usize] == player_color {
-                return true;
-            }
-        }
-        if on_board(row - i, col + i) {
-            if board[(row - i) as usize][(col + i) as usize] == player_color {
-                return true;
-            }
+            curr_row += dx;
+            curr_col += dy;
         }
     }
     false
