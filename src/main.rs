@@ -22,12 +22,30 @@ fn main() {
             .read_line(&mut input)
             .expect("Failed to read line");
         let trimmed: &str = input.trim();
-        let _move = str_to_move(&board, &trimmed, player);
-        if let Some((row, col)) = _move {
-            println!("move: {row},{col}");
+        let loc = str_to_move(&board, trimmed, player);
+        if let Some((row, col)) = loc {
+            // println!("move: {row},{col}");
             move_flip(&mut board, row, col, player);
             board_show(&board, B_SIZE as usize);
-            player = 1 - player;
+            if evaluate(&board, 1 - player) {
+                // valid moves remaining for oppo
+                player = 1 - player; // change player
+            } else {
+                println!("{} player has no valid move.", player_to_color(1 - player));
+                if !evaluate(&board, player) { //game ends
+                    println!("{} player has no valid move.", player_to_color(player));
+                    let (counter_w, counter_b): (i32,i32) = point_counter(&board,B_SIZE as usize);
+                    if counter_w> counter_b {
+                        println!("White wins by {} points!",counter_w-counter_b);
+                    }else if counter_b > counter_w {
+                        println!("Black wins by {} points!",counter_b-counter_w);
+                    }else {
+                        println!("Draw!");
+                    }
+                    break;
+
+                }
+            }
         } else {
             println!("Invalid move. Try again.");
             board_show(&board, B_SIZE as usize);
@@ -35,6 +53,17 @@ fn main() {
     }
 }
 
+fn evaluate(board: &Vec<Vec<char>>, player: u8) -> bool {
+    for row in 0..B_SIZE {
+        for col in 0..B_SIZE {
+            if board[row as usize][col as usize] == '.' && valid_move(board, row, col, player) {
+                    return true;
+
+            }
+        }
+    }
+    false
+}
 //move and flip the stone
 fn move_flip(board: &mut Vec<Vec<char>>, row: i8, col: i8, player: u8) {
     board[row as usize][col as usize] = player_to_color(player);
